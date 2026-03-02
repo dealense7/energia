@@ -94,8 +94,9 @@ export const Strings = {
     statGrid:   'Grid',
     statLevel:  'Level',
     playAgain:  'Play Again',
-    replay:     'Replay Puzzle',
+    replay:     'Same Puzzle',
     home:       'Main Menu',
+    generate:   'Generate New',
   },
 
   // ─── How To Screen ───────────────────────────────────────────────────────────
@@ -104,10 +105,12 @@ export const Strings = {
     letsPlay:    "Let's Play!",
     tilesSection: 'Tile Types',
     rules: [
-      { icon: '🗺️', text: 'Visit ',         highlight: 'every cell',        suffix: ' exactly once.' },
-      { icon: '🎯', text: 'Finish with ',   highlight: 'exactly 0 energy',  suffix: '.' },
-      { icon: '⚡', text: 'Each move ',     highlight: 'costs 1 energy',    suffix: '.' },
-      { icon: '🚫', text: 'Energy can ',    highlight: 'never go negative',  suffix: '.' },
+      { icon: '🗺️', text: 'Visit ', highlight: 'every cell', suffix: ' at least once.' },
+      { icon: '⚡', text: 'Each move ', highlight: 'costs 1 energy', suffix: ' or more.' },
+      { icon: '🧩', text: 'sometimes you ', highlight: 'gain energy', suffix: ' sometimes lose.'  },
+      { icon: '🚫', text: 'Energy can ', highlight: 'never go negative', suffix: '.' },
+      { icon: '🎯', text: 'Finish with ', highlight: '0 energy', suffix: ' for a perfect score.' },
+      { icon: '📊', text: 'Extra energy ', highlight: 'reduces your score', suffix: ' but win is a win.' },
     ],
     tiles: [
       { icon: '+N',  name: 'Positive Tile', desc: 'Adds energy when stepped on.' },
@@ -119,7 +122,8 @@ export const Strings = {
       { icon: '≥N',  name: 'Checkpoint',    desc: 'You must arrive here with at least N energy.' },
     ],
   },
-
+  generating: 'Generating',
+  funFuctTitle: 'Building takes time, here is a fun fact:',
   funFacts:  [
     "Honey never spoils.",
     "Bananas are berries, but strawberries aren’t.",

@@ -63,6 +63,7 @@ export interface Puzzle {
   grid: Tile[][];
   correctSolution: Position[];
   hintStartCell: Position;
+  seed?: number;
 }
 
 // ─── Game State ───────────────────────────────────────────────────────────────

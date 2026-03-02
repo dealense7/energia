@@ -49,6 +49,7 @@ export interface GeneratedPuzzle {
   solution: Position[];
   trace:    number[]; // energy value at each step along the solution
   attempts: number;
+  seed:     number;   // ← the resolved seed used to generate this puzzle
   stats: {
     minEnergy:  number;
     maxEnergy:  number;
@@ -133,7 +134,9 @@ export const GENERATOR_PRESETS: Record<string, GeneratorConfig> = {
 // We can't seed Math.random(), so we use a simple but solid hash-based PRNG.
 
 function createRng(seed?: number) {
-  let state = seed ?? (Math.random() * 0xffffffff) >>> 0;
+  // Resolve seed once so we can expose it on the returned object
+  const resolvedSeed: number = seed !== undefined ? seed : (Math.random() * 0xffffffff) >>> 0;
+  let state = resolvedSeed;
 
   function nextFloat(): number {
     state |= 0;
@@ -144,6 +147,7 @@ function createRng(seed?: number) {
   }
 
   return {
+    seed:    resolvedSeed,                                       // ← exposed seed
     float:   ()                    => nextFloat(),
     int:     (lo: number, hi: number) => Math.floor(nextFloat() * (hi - lo + 1)) + lo,
     pick:    <T>(arr: T[])         => arr[Math.floor(nextFloat() * arr.length)],
@@ -909,6 +913,7 @@ export class PuzzleGenerator {
         solution,
         trace,
         attempts: attempt,
+        seed:     rng.seed,   // ← return the resolved seed
         stats: {
           minEnergy:  Math.min(...trace),
           maxEnergy:  Math.max(...trace),
@@ -934,10 +939,12 @@ export class PuzzleGenerator {
   }
 }
 
-// ─── Convenience function ─────────────────────────────────────────────────────
-
-export function generatePuzzle(preset: keyof typeof GENERATOR_PRESETS, seed?: number): Puzzle | null {
-  const cfg = { ...GENERATOR_PRESETS[preset], seed };
+export function generatePuzzleWithSeed(
+  preset: keyof typeof GENERATOR_PRESETS,
+  seed?: number,
+): { puzzle: Puzzle; seed: number } | null {
+  const resolvedSeed = seed !== undefined ? seed : (Math.random() * 0xffffffff) >>> 0;
+  const cfg = { ...GENERATOR_PRESETS[preset], seed: resolvedSeed };
   const gen = new PuzzleGenerator(cfg);
 
   const difficulty: Level =
@@ -948,5 +955,8 @@ export function generatePuzzle(preset: keyof typeof GENERATOR_PRESETS, seed?: nu
   const result = gen.generate(difficulty);
   if (!result) return null;
 
-  return gen.toPuzzle(result, `${preset}_${Date.now()}`, difficulty);
+  return {
+    puzzle: gen.toPuzzle(result, `${preset}_${Date.now()}`, difficulty),
+    seed:   result.seed,
+  };
 }

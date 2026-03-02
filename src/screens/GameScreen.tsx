@@ -1,145 +1,115 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  View, Text, TouchableOpacity, StyleSheet,
-   ScrollView, Platform, StatusBar, Animated,
-   Image,
-} from 'react-native';
+import { Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { View,Text,TouchableOpacity,StyleSheet,ScrollView,Platform,StatusBar} from 'react-native';
+
 import { Colors, Spacing, Radius } from '../constants/theme';
 import { GameState, GameStatus, TileType, Puzzle } from '../engine/types';
 import { createInitialGameState, movePlayerToCell, playerIsStuck } from '../engine/gameLogic';
-import { generatePuzzle } from '../engine/puzzleGenerator';
+import { generatePuzzleWithSeed } from '../engine/puzzleGenerator';
 import { Strings } from '../constants/strings';
+
 import { Grid } from '../components/Grid';
 import { EnergyBar, EnergyFlash } from '../components/EnergyBar';
 import { Controls } from '../components/Controls';
+import { LoadingScreen } from './LoadingScreen';
+import { ErrorScreen } from './ErrorScreen';
 
-// ─── Difficulty → preset key ──────────────────────────────────────────────────
+// Custom Hook – some game logic lives here
+const PRESET_FOR_DIFFICULTY: Record<string, string> = { easy: 'easy_3x3', medium: 'medium_4x4', hard: 'hard_4x4', brutal: 'brutal_5x5'};
 
-const PRESET_FOR_DIFFICULTY = {
-  easy:   'easy_3x3',
-  medium: 'medium_4x4',
-  hard:   'hard_4x4',
-  brutal: 'brutal_5x5',
-} as const;
-
-// ─── Loading screen ───────────────────────────────────────────────────────────
-
-const LoadingScreen: React.FC<{ difficulty: string; onBack: () => void }> = ({ difficulty, onBack }) => {
-  const pulse  = useRef(new Animated.Value(0.4)).current;
-
-  useEffect(() => {
-    // Pulse the bolt
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse,  { toValue: 1,   duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse,  { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
-    ).start();
-
-  }, []);
-  const randomFact = Strings.funFacts[Math.floor(Math.random() * Strings.funFacts.length)];
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Text style={styles.backText}>{Strings.nav.back}</Text>
-        </TouchableOpacity>
-        <View style={styles.titleCol}>
-          <Text style={styles.diffTag}>{difficulty.toUpperCase()}</Text>
-        </View>
-        <View style={{ minWidth: 60 }} />
-      </View>
-
-      <View style={styles.loadingContainer}>
-
-        {/* Pulsing bolt in the center */}
-        <Animated.View style={{ opacity: pulse }}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-          />
-        </Animated.View>
-
-        <Text style={styles.loadingTitle}>Generating</Text>
-        <Text style={styles.loadingSubtitle}>Building takes time, here is a fun fact:</Text>
-        <Text style={[styles.loadingSubtitle, styles.funFact]}>{randomFact}</Text>
-      </View>
-    </SafeAreaView>
-  );
-};
-
-// ─── Error screen ─────────────────────────────────────────────────────────────
-
-const ErrorScreen: React.FC<{ onRetry: () => void; onBack: () => void }> = ({ onRetry, onBack }) => (
-  <SafeAreaView style={styles.safe}>
-    <View style={styles.loadingContainer}>
-      <Text style={styles.loadingTitle}>Happens rarely..</Text>
-      <Text style={styles.loadingSubtitle}>Try generating again, it might work this time.</Text>
-      <View style={{ flexDirection: 'row', gap: Spacing.lg, marginTop: Spacing.lg }}>
-        <TouchableOpacity style={styles.backBtnStyle}onPress={onBack}>
-          <Text style={styles.backText}>{Strings.nav.home}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-          <Text style={styles.retryText}>{Strings.nav.retry}</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </SafeAreaView>
-);
-
-// ─── Game screen ──────────────────────────────────────────────────────────────
-
-export const GameScreen: React.FC = () => {
-  const router = useRouter();
-  const { difficulty = 'easy' } = useLocalSearchParams<{ difficulty: string }>();
-
-  const [puzzle,         setPuzzle]         = useState<Puzzle | null>(null);
-  const [isGenerating,   setIsGenerating]   = useState(true);
+const useGameSession = (
+  difficulty: string,
+  initialSeed?: number,
+  onWin?: (params: {
+    time: number;
+    leftEnergy: number;
+    gridSize: number;
+    difficulty: string;
+    seed?: number;
+  }) => void
+) => {
+  const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
+  const [seed, setSeed] = useState<number | null>(null);
+  const [isGenerating, setIsGenerating] = useState(true);
   const [generationFailed, setGenerationFailed] = useState(false);
 
-  const [game,           setGame]           = useState<GameState | null>(null);
-  const [history,        setHistory]        = useState<GameState[]>([]);
-  const [shakingCell,    setShakingCell]    = useState<string | null>(null);
-  const [energyFlash,    setEnergyFlash]    = useState<EnergyFlash>(null);
-  const [showHint,       setShowHint]       = useState(false);
-  const [playUnlockAnim, setPlayUnlockAnim] = useState(false);
-  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [game, setGame] = useState<GameState | null>(null);
+  const [history, setHistory] = useState<GameState[]>([]);
 
-  // track when the current round started so we can show elapsed time on win
+  const [shakingCell, setShakingCell] = useState<string | null>(null);
+  const [energyFlash, setEnergyFlash] = useState<EnergyFlash>(null);
+  const [showHint, setShowHint] = useState(false);
+  const [playUnlockAnim, setPlayUnlockAnim] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(Date.now());
 
-  const generateAndStart = useCallback(() => {
+  // Generate / Regenerate
+  const regenerate = useCallback(() => {
     setIsGenerating(true);
     setGenerationFailed(false);
     setPuzzle(null);
     setGame(null);
     setHistory([]);
- 
-    setTimeout(() => {
-      const key = PRESET_FOR_DIFFICULTY[difficulty as keyof typeof PRESET_FOR_DIFFICULTY] ?? 'easy_3x3';
-      const generated = generatePuzzle(key);
+    setElapsedTime(0);
+    setShowHint(false);
 
+    setTimeout(() => {
+      const key = PRESET_FOR_DIFFICULTY[difficulty] ?? 'easy_3x3';
+      const generated = generatePuzzleWithSeed(key, initialSeed );
+
+      console.log(generated?.seed)
+      
       if (!generated) {
         setIsGenerating(false);
         setGenerationFailed(true);
         return;
       }
 
-      setPuzzle(generated);
-      setGame(createInitialGameState(generated));
-      // reset timer
+      setPuzzle(generated.puzzle);
+      setSeed(generated.seed);
+      setGame(createInitialGameState(generated.puzzle));
       startTimeRef.current = Date.now();
       setIsGenerating(false);
-    }, 50); // 50ms delay is enough for the loading UI to paint
+    }, 50);
   }, [difficulty]);
 
-  // Generate on mount
-  useEffect(() => { generateAndStart(); }, []);
+  // Initial generation
+  useEffect(() => { regenerate(); }, [regenerate]);
 
-  useEffect(() => () => { if (flashTimer.current) clearTimeout(flashTimer.current); }, []);
+  // Cleanup timers
+  useEffect(() => {
+    return () => {
+      if (flashTimer.current) clearTimeout(flashTimer.current);
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, []);
+
+  // Elapsed time timer
+  useEffect(() => {
+    if (!puzzle || !game || game.status === GameStatus.Won) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      return;
+    }
+
+    timerIntervalRef.current = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      setElapsedTime(elapsed);
+    }, 1000);
+
+    return () => {
+      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    };
+  }, [puzzle, game?.status]);
 
   const flashEnergy = useCallback((type: EnergyFlash) => {
     setEnergyFlash(type);
@@ -147,122 +117,197 @@ export const GameScreen: React.FC = () => {
     flashTimer.current = setTimeout(() => setEnergyFlash(null), 600);
   }, []);
 
-  // determine whether hints may be shown given the current state
-  const isHintAllowed = useCallback(() => {
-      if (!game || !puzzle) return false;
+  // Hint logic
+  const canHint = useMemo(() => {
+    if (!game || !puzzle) return false;
+    const path = game.pathSoFar;
+    const solution = puzzle.correctSolution;
 
-      const path = game.pathSoFar;
-      const solution = puzzle.correctSolution;
-
-      for (let i = 0; i < path.length; i++) {
-        if (i >= solution.length || path[i][0] !== solution[i][0] || path[i][1] !== solution[i][1]) {
-          return false;
-        }
+    for (let i = 0; i < path.length; i++) {
+      if (i >= solution.length || path[i][0] !== solution[i][0] || path[i][1] !== solution[i][1]) {
+        return false;
       }
-
-      return true;
+    }
+    return true;
   }, [game, puzzle]);
 
-  const toggleHint = useCallback(() => {
-    setShowHint(h => (isHintAllowed() ? !h : false));
-  }, [isHintAllowed]);
+  useEffect(() => {
+    if (!canHint) setShowHint(false);
+  }, [canHint]);
 
-  // ── Show loading / error states before puzzle is ready ────────────────────
+  const toggleHint = useCallback(() => {
+    setShowHint((h) => (canHint ? !h : false));
+  }, [canHint]);
+
+  // Cell tap handler
+  const handleCellTap = useCallback(
+    (row: number, col: number) => {
+      if (!game || game.status === GameStatus.Won) return;
+
+      const next = movePlayerToCell(game, [row, col]);
+      if (!next) {
+        setShakingCell(`${row}-${col}`);
+        setTimeout(() => setShakingCell(null), 400);
+        return;
+      }
+
+      if (!game.lockedTilesAreUnlocked && next.lockedTilesAreUnlocked) {
+        setPlayUnlockAnim(true);
+        setTimeout(() => setPlayUnlockAnim(false), 1500);
+      }
+
+      const tile = puzzle!.grid[row][col];
+      if (tile.type === TileType.Multiplier) {
+        flashEnergy('mul');
+      } else {
+        const delta = next.currentEnergy - game.currentEnergy;
+        if (delta > 0) flashEnergy('gain');
+        else if (delta < 0) flashEnergy('loss');
+      }
+
+      setHistory((h) => [...h, game]);
+      setGame(next);
+
+      if (next.status === GameStatus.Won) {
+        const elapsedSec = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        const leftEnergy = next.currentEnergy;
+        const gridSize = puzzle!.gridSize;
+
+      setTimeout(() => {
+        onWin?.({ time: elapsedSec, leftEnergy, gridSize, difficulty, seed: seed! }); // ← add seed
+      }, 300);
+      }
+    },
+    [game, puzzle, flashEnergy, onWin, difficulty]
+  );
+
+  const undoMove = useCallback(() => {
+    if (!history.length) return;
+    setGame(history[history.length - 1]);
+    setHistory((h) => h.slice(0, -1));
+  }, [history]);
+
+  const resetPuzzle = useCallback(() => {
+    if (!puzzle) return;
+    setGame(createInitialGameState(puzzle));
+    setHistory([]);
+    setElapsedTime(0);
+    startTimeRef.current = Date.now();
+    setShowHint(false);
+  }, [puzzle]);
+
+
+  // Maybe in futurer, we can have can save game if player will win
+  const saveCurrentPuzzle = useCallback(async () => {
+    if (!puzzle) return;
+
+    try {
+      const saveKey = `saved_puzzle_${difficulty}_${Date.now()}`;
+      await AsyncStorage.setItem(saveKey, JSON.stringify(puzzle));
+
+      Alert.alert('✅ Puzzle Saved', 'You can load it later from your saved puzzles.');
+    } catch (e) {
+      Alert.alert('❌ Save Failed', 'Please try again.');
+    }
+  }, [puzzle, difficulty]);
+
+  return {
+    isGenerating,
+    generationFailed,
+    puzzle,
+    game,
+    history,
+    shakingCell,
+    energyFlash,
+    showHint,
+    playUnlockAnim,
+    elapsedTime,
+    handleCellTap,
+    toggleHint,
+    undoMove,
+    resetPuzzle,
+    regenerate,
+    saveCurrentPuzzle,
+  };
+};
+
+
+// Main Component
+export const GameScreen: React.FC = () => {
+  const router = useRouter();
+  const { difficulty = 'easy', seedNumber } = useLocalSearchParams<{
+    difficulty: string;
+    seedNumber?: string;
+  }>();
+
+  const {
+    isGenerating,
+    generationFailed,
+    puzzle,
+    game,
+    history,
+    shakingCell,
+    energyFlash,
+    showHint,
+    playUnlockAnim,
+    elapsedTime,
+    handleCellTap,
+    toggleHint,
+    undoMove,
+    resetPuzzle,
+    regenerate,
+    saveCurrentPuzzle,
+  } = useGameSession(difficulty, seedNumber ? Number(seedNumber) : undefined, (winParams) => {
+    router.replace(
+      `/win?time=${winParams.time}&gridSize=${winParams.gridSize}&difficulty=${winParams.difficulty}&leftEnergy=${winParams.leftEnergy}&seed=${winParams.seed}`
+    );
+  });
+
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const movesUntilUnlock = puzzle && game
+    ? Math.max(0, puzzle.movesNeededToUnlockTiles - game.totalMovesMade)
+    : 0;
+
   if (isGenerating) {
     return <LoadingScreen difficulty={difficulty} onBack={() => router.push('/')} />;
   }
 
   if (generationFailed || !puzzle || !game) {
-    return <ErrorScreen onRetry={generateAndStart} onBack={() => router.push('/')} />;
+    return <ErrorScreen onRetry={regenerate} onBack={() => router.push('/')} />;
   }
-
-  // ── Puzzle is ready — render the game ─────────────────────────────────────
-
-  const handleCellTap = (row: number, col: number) => {
-    if (game.status === GameStatus.Won) return;
-
-    const next = movePlayerToCell(game, [row, col]);
-    if (!next) {
-      setShakingCell(`${row}-${col}`);
-      setTimeout(() => setShakingCell(null), 400);
-      return;
-    }
-
-    if (!game.lockedTilesAreUnlocked && next.lockedTilesAreUnlocked) {
-      setPlayUnlockAnim(true);
-      setTimeout(() => setPlayUnlockAnim(false), 1500);
-    }
-
-    const tile = puzzle.grid[row][col];
-    if (tile.type === TileType.Multiplier) {
-      flashEnergy('mul');
-    } else {
-      const delta = next.currentEnergy - game.currentEnergy;
-      if (delta > 0) flashEnergy('gain');
-      else if (delta < 0) flashEnergy('loss');
-    }
-
-    setHistory(h => [...h, game]);
-
-    setGame(next);
-    updateHintMode(next);
-    
-
-    if (next.status === GameStatus.Won) {
-      const elapsedSec = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      const leftEnergy = next.currentEnergy;
-      setTimeout(() => {
-        router.replace(
-          `/win?time=${elapsedSec}&gridSize=${puzzle.gridSize}&difficulty=${difficulty}&leftEnergy=${leftEnergy}`
-        );
-      }, 300);
-    }
-  };
-
-
-  const updateHintMode = (next: GameState) => {
-      const path = next.pathSoFar;
-      const solution = puzzle.correctSolution;
-
-      for (let i = 0; i < path.length; i++) {
-        if (i >= solution.length || path[i][0] !== solution[i][0] || path[i][1] !== solution[i][1]) {
-          return setShowHint(false);
-        }
-      }
-  }
-
-  const undoMove = () => {
-    if (!history.length) return;
-    setGame(history[history.length - 1]);
-    setHistory(h => h.slice(0, -1));
-  };
-
-  const resetPuzzle = () => {
-    setGame(createInitialGameState(puzzle));
-    setHistory([]);
-  };
-
-  const movesUntilUnlock = Math.max(0, puzzle.movesNeededToUnlockTiles - game.totalMovesMade);
 
   return (
     <SafeAreaView style={styles.safe}>
-      {/* ── Fixed header ── */}
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.push('/')} style={styles.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+        <TouchableOpacity
+          onPress={() => router.push('/')}
+          style={styles.backBtn}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={styles.backText}>{Strings.nav.back}</Text>
         </TouchableOpacity>
 
         <View style={styles.titleCol}>
           <Text style={styles.diffTag}>{puzzle.difficulty.toUpperCase()}</Text>
-          <Text style={styles.puzzleId}>{puzzle.id}</Text>
+          <Text style={styles.timerText}>{formatTime(elapsedTime)}</Text>
         </View>
 
-        <TouchableOpacity onPress={toggleHint} style={styles.hintBtn}>
-          <Text style={styles.hintText}>{showHint ? Strings.nav.hideHint : Strings.nav.hint}</Text>
-        </TouchableOpacity>
+        {/* Action buttons */}
+        <View style={styles.rightControls}>
+          <TouchableOpacity onPress={toggleHint} style={styles.hintBtn}>
+            <Text style={styles.hintText}>
+              {showHint ? Strings.nav.hideHint : Strings.nav.hint}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* ── Scrollable game content ── */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -302,116 +347,110 @@ export const GameScreen: React.FC = () => {
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: Colors.bg,
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight ?? 0 : 0,
   },
-  logo: {
-    width: 70,
-    height: 70,
-    resizeMode: 'contain',
-  },
 
-  // ── Header ──────────────────────────────────────────────────────────────────
   header: {
-    flexDirection:     'row',
-    alignItems:        'center',
-    justifyContent:    'space-between',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: Spacing.lg,
-    paddingVertical:   Spacing.md,
-    backgroundColor:   Colors.bg,
+    paddingVertical: Spacing.md,
+    backgroundColor: Colors.bg,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderDark,
   },
-  backBtn:  { minWidth: 60 },
-  backText: { color: Colors.textPrimary, fontSize: 14, letterSpacing: 1, fontFamily: 'Rajdhani' },
-  titleCol: { alignItems: 'center', gap: 2, flex: 1, marginHorizontal: Spacing.sm },
-  diffTag:  { fontSize: 12, letterSpacing: 3, color: Colors.gold, fontFamily: 'SpaceMono' },
-  puzzleId: { fontSize: 10, color: '#334155', fontFamily: 'SpaceMono' },
-  hintBtn:  { borderWidth: 1, borderColor: '#334155', borderRadius: Radius.sm, paddingVertical: 4, paddingHorizontal: 10, minWidth: 60, alignItems: 'center' },
-  hintText: { color: Colors.gold, fontSize: 12, letterSpacing: 1, fontFamily: 'Rajdhani' },
-
-  // ── Scroll content ───────────────────────────────────────────────────────────
-  scrollContent: {
-    flexGrow: 1, alignItems: 'center',
-    gap: Spacing.lg, paddingVertical: Spacing.lg, paddingBottom: Spacing.xxl,
-  },
-
-  // ── Loading screen ───────────────────────────────────────────────────────────
-  loadingContainer: {
-    flex:            1,
-    alignItems:      'center',
-    justifyContent:  'center',
-    gap:             Spacing.lg,
-    paddingHorizontal: Spacing.xxl,
-  },
-  spinRing: {
-    position:     'absolute',
-    width:        110,
-    height:       110,
-    borderRadius: 55,
-    borderWidth:  2,
-    borderColor:  Colors.gold,
-    borderStyle:  'dashed',
-    opacity:      0.4,
-  },
-  loadingBolt: {
-    fontSize:   52,
-    marginBottom: 8,
-  },
-  loadingTitle: {
-    fontSize:      18,
-    fontFamily:    'Bold',
-    color:         Colors.gold,
-    letterSpacing: 4,
-  },
-  loadingSubtitle: {
-    fontSize:      12,
-    fontFamily:    'Light',
-    color:         Colors.textMuted,
+  backBtn: { minWidth: 60 },
+  backText: {
+    color: Colors.textPrimary,
+    fontSize: 11,
     letterSpacing: 1,
+    fontFamily: 'Light',
   },
-  funFact: {
-    fontStyle: 'italic',
-    marginTop: Spacing.sm,
+  titleCol: { alignItems: 'center', gap: 2, flex: 1, marginHorizontal: Spacing.sm },
+  diffTag: {
+    fontSize: 12,
+    letterSpacing: 3,
+    color: Colors.gold,
     fontFamily: 'Regular',
   },
-  loadingWarning: {
-    fontSize:      12,
-    fontFamily:    'Rajdhani',
-    color:         Colors.red,
+  timerText: {
+    fontSize: 11,
+    color: Colors.textMuted,
+    fontFamily: 'Light',
     letterSpacing: 1,
-    marginTop:     Spacing.sm,
-    opacity:       0.8,
   },
 
-  // ── Error screen ─────────────────────────────────────────────────────────────
-  errorIcon: { fontSize: 48 },
-  retryBtn: {
-    backgroundColor:   Colors.gold,
-    paddingVertical:   12,
-    paddingHorizontal: 32,
-    borderRadius:      Radius.lg,
-    marginTop:         Spacing.md,
+  rightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
-  backBtnStyle: {
-    backgroundColor:   Colors.borderDark,
-    paddingVertical:   12,
-    paddingHorizontal: 32,
-    borderRadius:      Radius.lg,
-    marginTop:         Spacing.md,
+  actionBtn: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: Radius.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    alignItems: 'center',
   },
-  retryText: { color: '#060d1a', fontSize: 16, fontFamily: 'RajdhaniBold', letterSpacing: 2 },
+  actionText: {
+    color: Colors.gold,
+    fontSize: 11,
+    letterSpacing: 1,
+    fontFamily: 'Regular',
+  },
+  hintBtn: {
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: Radius.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  hintText: {
+    color: Colors.gold,
+    fontSize: 12,
+    letterSpacing: 1,
+    fontFamily: 'Regular',
+  },
 
-  // ── Game screen ───────────────────────────────────────────────────────────────
+  scrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    gap: Spacing.lg,
+    paddingVertical: Spacing.lg,
+    paddingBottom: Spacing.xxl,
+  },
+
   stuckBanner: {
-    backgroundColor: '#3a1a1a', borderWidth: 1, borderColor: Colors.red,
-    borderRadius: Radius.md, paddingVertical: 10, paddingHorizontal: Spacing.lg,
-    marginHorizontal: Spacing.lg, width: '90%',
+    backgroundColor: '#3a1a1a',
+    borderWidth: 1,
+    borderColor: Colors.red,
+    borderRadius: Radius.md,
+    paddingVertical: 10,
+    paddingHorizontal: Spacing.lg,
+    marginHorizontal: Spacing.lg,
+    width: '90%',
   },
-  stuckText: { color: Colors.red, fontSize: 13, letterSpacing: 1, textAlign: 'center', fontFamily: 'SpaceMono' },
-  idleHint:  { textAlign: 'center', color: Colors.textDim, fontSize: 13, letterSpacing: 2, fontFamily: 'SpaceMono', paddingVertical: 8 },
+  stuckText: {
+    color: Colors.red,
+    fontSize: 13,
+    letterSpacing: 1,
+    textAlign: 'center',
+    fontFamily: 'SpaceMono',
+  },
+  idleHint: {
+    textAlign: 'center',
+    color: Colors.textDim,
+    fontSize: 13,
+    letterSpacing: 2,
+    fontFamily: 'SpaceMono',
+    paddingVertical: 8,
+  },
 });

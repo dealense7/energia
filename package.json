@@ -1,5 +1,5 @@
 {
-  "name": "energygrid",
+  "name": "Energia",
   "version": "1.0.0",
   "main": "expo-router/entry",
   "scripts": {
@@ -9,8 +9,11 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "expo": "~55.0.4",
+    "expo-file-system": "~55.0.10",
     "expo-font": "~55.0.4",
+    "react-dom": "19.2.0",
     "expo-linking": "~55.0.4",
     "expo-router": "~55.0.3",
     "expo-splash-screen": "~55.0.10",
@@ -24,5 +27,8 @@
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "react-dom": "$react"
+  }
 }

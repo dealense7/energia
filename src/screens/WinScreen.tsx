@@ -7,8 +7,8 @@ import { Strings } from '../constants/strings';
 
 export const WinScreen: React.FC = () => {
   const router = useRouter();
-  const { time = '0', gridSize = '3', difficulty = 'easy', leftEnergy = '2' } = useLocalSearchParams<{
-    time: string; gridSize: string; difficulty: string; leftEnergy: string;
+  const { time = '0', gridSize = '3', difficulty = 'easy', leftEnergy = '2', seed = '0' } = useLocalSearchParams<{
+    time: string; gridSize: string; difficulty: string; leftEnergy: string; seed: string;
   }>();
 
   const pulse = useRef(new Animated.Value(1)).current;
@@ -84,19 +84,23 @@ export const WinScreen: React.FC = () => {
           <Text style={styles.primaryText}>{win.home}</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.secondaryBtn}
-          onPress={() => router.replace(`/game?difficulty=${difficulty}`)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.secondaryText}>{win.replay}</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: Spacing.lg}}>
+          <TouchableOpacity style={styles.backBtnStyle} onPress={() => router.replace(`/game?difficulty=${difficulty}&seedNumber=${seed}`)}>
+            <Text style={styles.backText}>{win.replay}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backBtnStyle} onPress={() => router.replace(`/game?difficulty=${difficulty}`)}>
+            <Text style={styles.backText}>{win.generate}</Text>
+          </TouchableOpacity>
+        </View>
+        
       </Animated.View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  
+  row: {flexDirection: 'row', gap: 10, width: '90%'},
   logo:       { width: 50, height: 50, resizeMode: 'contain'},
   safe:      { flex: 1, backgroundColor: Colors.bg },
   container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.xxl, gap: Spacing.xl },
@@ -110,10 +114,11 @@ const styles = StyleSheet.create({
   },
   stat:         { alignItems: 'center', gap: 4 },
   statVal:      { fontSize: 32, fontFamily: 'Regular', color: Colors.textPrimary },
-  statLabel:    { fontSize: 11, color: Colors.textMuted, letterSpacing: 2, fontFamily: 'Rajdhani' },
+  statLabel:    { fontSize: 11, color: Colors.textMuted, letterSpacing: 2, fontFamily: 'Regular' },
   divider:      { width: 1, height: 44, backgroundColor: Colors.borderDark },
   primaryBtn:   { backgroundColor: Colors.gold, paddingVertical: 14, paddingHorizontal: 40, borderRadius: Radius.lg, width: '100%', alignItems: 'center' },
-  primaryText:  { color: '#060d1a', fontSize: 18, fontFamily: 'RajdhaniBold', letterSpacing: 3 },
-  secondaryBtn: { borderWidth: 2, borderColor: '#334155', paddingVertical: 12, paddingHorizontal: 40, borderRadius: Radius.lg, width: '100%', alignItems: 'center' },
-  secondaryText:{ color: Colors.textMuted, fontSize: 15, letterSpacing: 2, fontFamily: 'RajdhaniBold' },
+  primaryText:  { color: '#060d1a', fontSize: 18, fontFamily: 'Bold', letterSpacing: 3 },
+  backBtnStyle: { backgroundColor: Colors.borderDark, paddingVertical: 12, paddingHorizontal: 32, borderRadius: Radius.lg, marginTop: Spacing.md},
+  retryText:    { color: '#060d1a', fontSize: 16, fontFamily: 'Bold', letterSpacing: 2 },
+  backText:     {color: Colors.textPrimary, fontSize: 11, letterSpacing: 1, fontFamily: "Light"},
 });

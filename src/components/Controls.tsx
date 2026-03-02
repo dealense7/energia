@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     color: '#94a3b8',
     fontSize: 15,
     letterSpacing: 1.5,
-    fontFamily: 'RajdhaniBold',
+    fontFamily: 'Bold',
   },
   resetText: { color: Colors.red },
 });
