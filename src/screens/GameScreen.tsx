@@ -51,7 +51,7 @@ const useGameSession = (
   const startTimeRef = useRef<number>(Date.now());
 
   // Generate / Regenerate
-  const regenerate = useCallback(() => {
+  const regenerate = useCallback((useSeed: boolean) => {
     setIsGenerating(true);
     setGenerationFailed(false);
     setPuzzle(null);
@@ -62,9 +62,7 @@ const useGameSession = (
 
     setTimeout(() => {
       const key = PRESET_FOR_DIFFICULTY[difficulty] ?? 'easy_3x3';
-      const generated = generatePuzzleWithSeed(key, initialSeed );
-
-      console.log(generated?.seed)
+      const generated = generatePuzzleWithSeed(key, useSeed && initialSeed ? initialSeed : undefined);
       
       if (!generated) {
         setIsGenerating(false);
@@ -81,7 +79,7 @@ const useGameSession = (
   }, [difficulty]);
 
   // Initial generation
-  useEffect(() => { regenerate(); }, [regenerate]);
+  useEffect(() => { regenerate(true); }, [regenerate]);
 
   // Cleanup timers
   useEffect(() => {
@@ -197,20 +195,25 @@ const useGameSession = (
   }, [puzzle]);
 
 
-  // Maybe in futurer, we can have can save game if player will win
   const saveCurrentPuzzle = useCallback(async () => {
     if (!puzzle) return;
 
     try {
-      const saveKey = `saved_puzzle_${difficulty}_${Date.now()}`;
-      await AsyncStorage.setItem(saveKey, JSON.stringify(puzzle));
-
-      Alert.alert('✅ Puzzle Saved', 'You can load it later from your saved puzzles.');
+      const data = {
+        'difficulty': puzzle.difficulty,
+        'seed': seed,
+        'time': elapsedTime,
+        'currentEnergy': game?.currentEnergy ?? 0,
+        'pathSoFar': game?.pathSoFar ?? [],
+      }
+      const saveKey = `puzzle_${difficulty}_${Date.now()}`;
+      await AsyncStorage.setItem(saveKey, JSON.stringify(data));
     } catch (e) {
-      Alert.alert('❌ Save Failed', 'Please try again.');
+      console.log('Failed to save puzzle:', e);
     }
   }, [puzzle, difficulty]);
 
+  
   return {
     isGenerating,
     generationFailed,
@@ -258,6 +261,7 @@ export const GameScreen: React.FC = () => {
     regenerate,
     saveCurrentPuzzle,
   } = useGameSession(difficulty, seedNumber ? Number(seedNumber) : undefined, (winParams) => {
+    saveCurrentPuzzle();
     router.replace(
       `/win?time=${winParams.time}&gridSize=${winParams.gridSize}&difficulty=${winParams.difficulty}&leftEnergy=${winParams.leftEnergy}&seed=${winParams.seed}`
     );
@@ -278,7 +282,7 @@ export const GameScreen: React.FC = () => {
   }
 
   if (generationFailed || !puzzle || !game) {
-    return <ErrorScreen onRetry={regenerate} onBack={() => router.push('/')} />;
+    return <ErrorScreen onRetry={() => regenerate(true)} onBack={() => router.push('/')} />;
   }
 
   return (
@@ -336,7 +340,7 @@ export const GameScreen: React.FC = () => {
           </View>
         )}
 
-        <Controls onUndo={undoMove} onReset={resetPuzzle} canUndo={history.length > 0} />
+        <Controls onUndo={undoMove} onRegenerate={() => regenerate(false)} onReset={resetPuzzle} canUndo={history.length > 0} />
 
         {game.status === GameStatus.Idle && (
           <Text style={styles.idleHint}>{Strings.game.idlePrompt}</Text>

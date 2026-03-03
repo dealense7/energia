@@ -1,21 +1,17 @@
 {
   "expo": {
-    "name": "EnergyGrid",
-    "slug": "EnergyGrid",
+    "name": "Energia",
+    "slug": "Energia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "darkk",
+    "icon": "./assets/splash-icon.png",
+    "userInterfaceStyle": "dark",
     "backgroundColor": "#060d1a",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#060d1a"
-    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
+      "package": "com.rediron.energia",
       "adaptiveIcon": {
         "backgroundColor": "#060d1a",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -27,12 +23,26 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#060d1a",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 200
+        }
+      ],
       "expo-router",
       "expo-font"
     ],
     "scheme": "energy-grid",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "06d7f6cb-5238-4be7-89ea-7a1e80ce16dc"
+      }
     }
   }
 }

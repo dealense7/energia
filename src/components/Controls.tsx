@@ -6,11 +6,15 @@ import { Colors, Spacing, Radius } from '../constants/theme';
 interface ControlsProps {
   onUndo: () => void;
   onReset: () => void;
+  onRegenerate: () => void;
   canUndo: boolean;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ onUndo, onReset, canUndo }) => (
+export const Controls: React.FC<ControlsProps> = ({ onUndo, onReset, onRegenerate, canUndo }) => (
   <View style={styles.row}>
+    <TouchableOpacity style={[styles.btn]} onPress={onRegenerate} activeOpacity={0.7}>
+      <Text style={[styles.regenerateText]}>{Strings.controls.regenerate}</Text>
+    </TouchableOpacity>
     <TouchableOpacity
       style={[styles.btn, !canUndo && styles.disabled]}
       onPress={onUndo}
@@ -44,6 +48,12 @@ const styles = StyleSheet.create({
   resetBtn: { borderColor: '#f8717133' },
   text: {
     color: '#94a3b8',
+    fontSize: 15,
+    letterSpacing: 1.5,
+    fontFamily: 'Bold',
+  },
+  regenerateText: {
+    color: Colors.textDim,
     fontSize: 15,
     letterSpacing: 1.5,
     fontFamily: 'Bold',

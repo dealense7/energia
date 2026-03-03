@@ -48,6 +48,7 @@ export const Strings = {
   controls: {
     undo:  'Undo',
     reset: 'Reset',
+    regenerate: 'New',
   },
 
   // ─── Win Screen ──────────────────────────────────────────────────────────────

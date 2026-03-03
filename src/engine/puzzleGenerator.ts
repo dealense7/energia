@@ -64,11 +64,10 @@ export const GENERATOR_PRESETS: Record<string, GeneratorConfig> = {
 
   easy_3x3: {
     gridSize: 3, lockThreshold: 3,
-    // No locks — clean intro puzzle
     lockedCount: 0, lockedBlankCount: 0,
-    positiveCount: 1, negativeCount: 1, multiplierCount: 1,
-    positiveRange: [3, 6], negativeRange: [-2, -1], multiplierValues: [2, 3],
-    lockedPositiveRange: [1, 4], lockedNegativeRange: [-3, -1],
+    positiveCount: 2, negativeCount: 1, multiplierCount: 1,
+    positiveRange: [2, 5], negativeRange: [-2, -1], multiplierValues: [2],
+    lockedPositiveRange: [1, 3], lockedNegativeRange: [-2, -1],
     entryGateCount: 0, lockedEntryGateCount: 0,
     exitGateCount:  0, lockedExitGateCount:  0,
     checkpointCount: 0, checkpointRange: [2, 5],
@@ -80,15 +79,15 @@ export const GENERATOR_PRESETS: Record<string, GeneratorConfig> = {
 
   medium_4x4: {
     gridSize: 4, lockThreshold: 5,
-    // Introduces locks and directional gates
     lockedCount: 2, lockedBlankCount: 0,
-    positiveCount: 3, negativeCount: 3, multiplierCount: 1,
-    positiveRange: [2, 7], negativeRange: [-4, -1], multiplierValues: [2, 2, 3],
+    positiveCount: 3, negativeCount: 2, multiplierCount: 2,
+    positiveRange: [2, 6], negativeRange: [-4, -1], multiplierValues: [2, 2, 3],
     lockedPositiveRange: [1, 4], lockedNegativeRange: [-3, -1],
     entryGateCount: 1, lockedEntryGateCount: 0,
     exitGateCount:  1, lockedExitGateCount:  0,
-    checkpointCount: 0, checkpointRange: [3, 6],
+    checkpointCount: 0, checkpointRange: [3, 4],
     banStartOnMaxTile: true, lockBiggestPositiveProb: 0.4, minStartCandidates: 3,
+    maxStartingEnergy: 8,
     tightEnergy: true, tightThreshold: 3, minEnergyFloor: 1,
     targetSolutions: 1, requireLocksMatter: true,
     maxAttempts: 50_000,
@@ -99,7 +98,7 @@ export const GENERATOR_PRESETS: Record<string, GeneratorConfig> = {
     // Adds checkpoints and locked gates; tighter energy budget
     lockedCount: 2, lockedBlankCount: 0,
     positiveCount: 3, negativeCount: 3, multiplierCount: 1,
-    positiveRange: [2, 7], negativeRange: [-5, -1], multiplierValues: [2, 3],
+    positiveRange: [2, 7], negativeRange: [-5, -2], multiplierValues: [2, 3],
     lockedPositiveRange: [1, 4], lockedNegativeRange: [-3, -1],
     entryGateCount: 1, lockedEntryGateCount: 1,
     exitGateCount:  1, lockedExitGateCount:  0,
