@@ -19,8 +19,8 @@ export const Strings = {
     logoTitle:  'Energia',
     logoSub:    'Finish at zero. Navigate every cell.',
     howToPlay:  'How to Play',
-    support:    'Support',
-    supportSub: 'Watch an AD',
+    support:    'Source',
+    supportSub: 'Github',
     difficulties: {
       easy:   { label: 'Easy 3×3',   sub: 'Basic tiles' },
       medium: { label: 'Medium 4×4', sub: 'Locks + directions' },

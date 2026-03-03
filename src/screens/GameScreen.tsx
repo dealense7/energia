@@ -43,6 +43,7 @@ const useGameSession = (
   const [shakingCell, setShakingCell] = useState<string | null>(null);
   const [energyFlash, setEnergyFlash] = useState<EnergyFlash>(null);
   const [showHint, setShowHint] = useState(false);
+  const [showHintBtn, setShowHintBtn] = useState(true);
   const [playUnlockAnim, setPlayUnlockAnim] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -59,6 +60,7 @@ const useGameSession = (
     setHistory([]);
     setElapsedTime(0);
     setShowHint(false);
+    setShowHintBtn(true);
 
     setTimeout(() => {
       const key = PRESET_FOR_DIFFICULTY[difficulty] ?? 'easy_3x3';
@@ -123,9 +125,11 @@ const useGameSession = (
 
     for (let i = 0; i < path.length; i++) {
       if (i >= solution.length || path[i][0] !== solution[i][0] || path[i][1] !== solution[i][1]) {
+        setShowHintBtn(false);
         return false;
       }
     }
+    setShowHintBtn(true);
     return true;
   }, [game, puzzle]);
 
@@ -231,6 +235,7 @@ const useGameSession = (
     resetPuzzle,
     regenerate,
     saveCurrentPuzzle,
+    showHintBtn,
   };
 };
 
@@ -260,6 +265,7 @@ export const GameScreen: React.FC = () => {
     resetPuzzle,
     regenerate,
     saveCurrentPuzzle,
+    showHintBtn,
   } = useGameSession(difficulty, seedNumber ? Number(seedNumber) : undefined, (winParams) => {
     saveCurrentPuzzle();
     router.replace(
@@ -303,13 +309,14 @@ export const GameScreen: React.FC = () => {
         </View>
 
         {/* Action buttons */}
-        <View style={styles.rightControls}>
-          <TouchableOpacity onPress={toggleHint} style={styles.hintBtn}>
-            <Text style={styles.hintText}>
+         <View style={styles.rightControls}>
+          <TouchableOpacity onPress={toggleHint} style={showHintBtn ? styles.hintBtn : styles.hintBtnHidden}>
+            <Text style={showHintBtn ? styles.hintText : styles.hintTextHidden}>
               {showHint ? Strings.nav.hideHint : Strings.nav.hint}
             </Text>
           </TouchableOpacity>
         </View>
+
       </View>
 
       <ScrollView
@@ -417,8 +424,23 @@ const styles = StyleSheet.create({
     minWidth: 60,
     alignItems: 'center',
   },
+  hintBtnHidden: {
+    borderWidth: 1,
+    borderColor: Colors.textDim,
+    borderRadius: Radius.sm,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    minWidth: 60,
+    alignItems: 'center',
+  },
   hintText: {
     color: Colors.gold,
+    fontSize: 12,
+    letterSpacing: 1,
+    fontFamily: 'Regular',
+  },
+  hintTextHidden: {
+    color: Colors.textDim,
     fontSize: 12,
     letterSpacing: 1,
     fontFamily: 'Regular',

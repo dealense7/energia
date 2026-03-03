@@ -66,7 +66,7 @@ export const HomeScreen: React.FC = () => {
 
           <TouchableOpacity
             style={[styles.howtoBtn, styles.row]}
-            onPress={() => router.push('/howto')}
+            onPress={() => router.push('https://github.com/dealense7/energia')}
             activeOpacity={0.7}
           >
             <Text style={styles.howtoText}>{home.support}</Text>
@@ -84,10 +84,10 @@ const styles = StyleSheet.create({
   safe:       { flex: 1, backgroundColor: Colors.bg },
   row:        { flexDirection: 'row', gap: Spacing.lg },
   content:    { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: Spacing.lg, paddingTop: 48, paddingBottom: 40, gap: Spacing.xxl },
-  logTextCol: { margin: 0},
+  logTextCol: { margin: 0, flexShrink: 1, maxWidth: '100%' },
   logoRow:    { flexDirection: 'row', alignItems: 'center', gap: Spacing.lg },
   bolt:       { fontSize: 60 },
-  logoText:   { fontSize: 46, lineHeight: 46*1.3, fontFamily: 'Bold', color: Colors.green, letterSpacing: 4 },
+  logoText:   { fontSize: 46,lineHeight: 46*1.3,fontFamily: 'Bold',color: Colors.green,letterSpacing: 3,flexShrink: 1},
   logoSub:    { fontSize: 11, lineHeight: 11*1.3,fontFamily: 'Light', color: '#94a3b8'},
   tagline:    { fontSize: 13, color: Colors.textMuted, letterSpacing: 2, textAlign: 'center', fontFamily: 'Regular' },
   btnGroup:   { width: '100%', gap: 12 },
