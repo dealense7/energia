@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Colors, Spacing, Radius } from '../constants/theme';
 
 interface ControlsProps {
@@ -10,24 +10,28 @@ interface ControlsProps {
   canUndo: boolean;
 }
 
-export const Controls: React.FC<ControlsProps> = ({ onUndo, onReset, onRegenerate, canUndo }) => (
-  <View style={styles.row}>
-    <TouchableOpacity style={[styles.btn]} onPress={onRegenerate} activeOpacity={0.7}>
-      <Text style={[styles.regenerateText]}>{Strings.controls.regenerate}</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      style={[styles.btn, !canUndo && styles.disabled]}
-      onPress={onUndo}
-      disabled={!canUndo}
-      activeOpacity={0.7}
-    >
-      <Text style={[styles.text, !canUndo && { opacity: 0.35 }]}>↩ {Strings.controls.undo}</Text>
-    </TouchableOpacity>
-    <TouchableOpacity style={[styles.btn, styles.resetBtn]} onPress={onReset} activeOpacity={0.7}>
-      <Text style={[styles.text, styles.resetText]}>↺ {Strings.controls.reset}</Text>
-    </TouchableOpacity>
-  </View>
-);
+export const Controls: React.FC<ControlsProps> = ({ onUndo, onReset, onRegenerate, canUndo }) => {
+  const { strings } = useLanguage();
+
+  return (
+    <View style={styles.row}>
+      <TouchableOpacity style={[styles.btn]} onPress={onRegenerate} activeOpacity={0.7}>
+        <Text style={[styles.regenerateText]}>{strings.controls.regenerate}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.btn, !canUndo && styles.disabled]}
+        onPress={onUndo}
+        disabled={!canUndo}
+        activeOpacity={0.7}
+      >
+        <Text style={[styles.text, !canUndo && { opacity: 0.35 }]}>↩ {strings.controls.undo}</Text>
+      </TouchableOpacity>
+      <TouchableOpacity style={[styles.btn, styles.resetBtn]} onPress={onReset} activeOpacity={0.7}>
+        <Text style={[styles.text, styles.resetText]}>↺ {strings.controls.reset}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   row: {
@@ -48,13 +52,13 @@ const styles = StyleSheet.create({
   resetBtn: { borderColor: '#f8717133' },
   text: {
     color: '#94a3b8',
-    fontSize: 15,
+    fontSize: 12,
     letterSpacing: 1.5,
     fontFamily: 'Bold',
   },
   regenerateText: {
     color: Colors.textDim,
-    fontSize: 15,
+    fontSize: 12,
     letterSpacing: 1.5,
     fontFamily: 'Bold',
   },

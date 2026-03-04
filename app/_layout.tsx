@@ -4,6 +4,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import { View, Image, Animated } from 'react-native';
+import { LanguageProvider } from '../src/contexts/LanguageContext';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,7 +31,7 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   return (
-    <>
+    <LanguageProvider>
       <StatusBar style="light" backgroundColor="#060d1a" />
       <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: '#060d1a' } }}>
         <Stack.Screen name="index" />
@@ -55,6 +56,6 @@ export default function RootLayout() {
           />
         </Animated.View>
       )}
-    </>
+    </LanguageProvider>
   );
 }

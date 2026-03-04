@@ -10,7 +10,7 @@ import { Colors, Spacing, Radius } from '../constants/theme';
 import { GameState, GameStatus, TileType, Puzzle } from '../engine/types';
 import { createInitialGameState, movePlayerToCell, playerIsStuck } from '../engine/gameLogic';
 import { generatePuzzleWithSeed } from '../engine/puzzleGenerator';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
 
 import { Grid } from '../components/Grid';
 import { EnergyBar, EnergyFlash } from '../components/EnergyBar';
@@ -243,6 +243,7 @@ const useGameSession = (
 // Main Component
 export const GameScreen: React.FC = () => {
   const router = useRouter();
+  const { strings } = useLanguage();
   const { difficulty = 'easy', seedNumber } = useLocalSearchParams<{
     difficulty: string;
     seedNumber?: string;
@@ -300,7 +301,7 @@ export const GameScreen: React.FC = () => {
           style={styles.backBtn}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Text style={styles.backText}>{Strings.nav.back}</Text>
+          <Text style={styles.backText}>{strings.nav.back}</Text>
         </TouchableOpacity>
 
         <View style={styles.titleCol}>
@@ -312,7 +313,7 @@ export const GameScreen: React.FC = () => {
          <View style={styles.rightControls}>
           <TouchableOpacity onPress={toggleHint} style={showHintBtn ? styles.hintBtn : styles.hintBtnHidden}>
             <Text style={showHintBtn ? styles.hintText : styles.hintTextHidden}>
-              {showHint ? Strings.nav.hideHint : Strings.nav.hint}
+              {showHint ? strings.nav.hideHint : strings.nav.hint}
             </Text>
           </TouchableOpacity>
         </View>
@@ -343,14 +344,14 @@ export const GameScreen: React.FC = () => {
 
         {playerIsStuck(game) && (
           <View style={styles.stuckBanner}>
-            <Text style={styles.stuckText}>{Strings.game.stuckBanner}</Text>
+            <Text style={styles.stuckText}>{strings.game.stuckBanner}</Text>
           </View>
         )}
 
         <Controls onUndo={undoMove} onRegenerate={() => regenerate(false)} onReset={resetPuzzle} canUndo={history.length > 0} />
 
         {game.status === GameStatus.Idle && (
-          <Text style={styles.idleHint}>{Strings.game.idlePrompt}</Text>
+          <Text style={styles.idleHint}>{strings.game.idlePrompt}</Text>
         )}
       </ScrollView>
     </SafeAreaView>

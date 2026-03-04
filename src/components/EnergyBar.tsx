@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Text, StyleSheet, Animated } from 'react-native';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Colors, Spacing, Radius } from '../constants/theme';
 
 export type EnergyFlash = 'gain' | 'loss' | 'mul' | null;
@@ -25,6 +25,7 @@ export const EnergyBar: React.FC<EnergyBarProps> = ({
   energy, movesMade, tilesUnlocked, movesUntilUnlock,
   flash, playUnlockAnim, isPlaying,
 }) => {
+  const { strings } = useLanguage();
   const borderColor = useRef(new Animated.Value(0)).current;
   const lockScale   = useRef(new Animated.Value(1)).current;
 
@@ -53,13 +54,13 @@ export const EnergyBar: React.FC<EnergyBarProps> = ({
 
   return (
     <Animated.View style={[styles.bar, { borderColor: animatedBorder }]}>
-      <Text style={styles.label}>⚡ ENERGY</Text>
+      <Text style={styles.label}>{strings.energyBar.label}</Text>
 
       <Text style={[styles.energy, { color: energyIsLow ? Colors.red : Colors.textPrimary }]}>
-        {energy}{energyIsLow ? ' ' + Strings.energyBar.lowEnergyAlert : ''}
+        {energy}{energyIsLow ? ' ' + strings.energyBar.lowEnergyAlert : ''}
       </Text>
 
-      <Text style={styles.moves}>{Strings.energyBar.movesLabel} {movesMade}</Text>
+      <Text style={styles.moves}>{strings.energyBar.movesLabel} {movesMade}</Text>
 
       {showLockStatus && (
         <Animated.Text style={[
@@ -67,7 +68,7 @@ export const EnergyBar: React.FC<EnergyBarProps> = ({
           { color: tilesUnlocked ? Colors.green : '#94a3b8' },
           { transform: [{ scale: lockScale }] },
         ]}>
-          {tilesUnlocked ? Strings.energyBar.unlocked : Strings.energyBar.locked(movesUntilUnlock)}
+          {tilesUnlocked ? strings.energyBar.unlocked : strings.energyBar.locked(movesUntilUnlock)}
         </Animated.Text>
       )}
     </Animated.View>

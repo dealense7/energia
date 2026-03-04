@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage, Language } from '../contexts/LanguageContext';
 import { Image } from 'react-native';
 import { Level } from '@/engine/types';
 
@@ -23,7 +23,15 @@ const DIFFICULTIES = {
 
 export const HomeScreen: React.FC = () => {
   const router = useRouter();
-  const { home } = Strings;
+  const { strings, language, setLanguage } = useLanguage();
+  const { home } = strings;
+
+  const languages = [
+    { code: 'en' as Language, name: 'English' },
+    { code: 'es' as Language, name: 'Español' },
+    { code: 'fr' as Language, name: 'Français' },
+    { code: 'ru' as Language, name: 'Русский' },
+  ];
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -35,6 +43,22 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.logoText}>{home.logoTitle}</Text>
             <Text style={styles.logoSub}>{home.logoSub}</Text>
           </View>
+        </View>
+
+        {/* Language Selector */}
+        <View style={styles.languageSelector}>
+          {languages.map((lang) => (
+            <TouchableOpacity
+              key={lang.code}
+              style={[styles.langBtn, language === lang.code && styles.langBtnActive]}
+              onPress={() => setLanguage(lang.code)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.langText, language === lang.code && styles.langTextActive]}>
+                {lang.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         <View style={styles.btnGroup}>
@@ -57,10 +81,11 @@ export const HomeScreen: React.FC = () => {
 
         <View style={styles.row}>
           <TouchableOpacity
-            style={styles.howtoBtn}
+            style={[styles.howtoBtn, styles.row]}
             onPress={() => router.push('/howto')}
             activeOpacity={0.7}
           >
+            <Image source={require('../../assets/manual.png')} style={styles.hatlogo}/>
             <Text style={styles.howtoText}>{home.howToPlay}</Text>
           </TouchableOpacity>
 
@@ -125,6 +150,11 @@ const styles = StyleSheet.create({
     letterSpacing: 1 
   },
   howtoBtn:   { paddingVertical: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18, borderWidth: 1, borderColor: '#334155', borderRadius: Radius.md },
-  howtoText:  { color: Colors.textMuted, fontSize: 14, letterSpacing: 1, fontFamily: 'Regular' },
+  howtoText:  { color: Colors.textMuted, fontSize: 12, letterSpacing: 1, fontFamily: 'Regular' },
   howtoTextSub:  { color: Colors.textMuted, fontSize: 9, letterSpacing: 0.7, fontFamily: 'Light' },
+  languageSelector: { flexDirection: 'row', gap: Spacing.sm, marginBottom: Spacing.lg },
+  langBtn: { paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, borderRadius: Radius.md, borderWidth: 1, borderColor: '#334155' },
+  langBtnActive: { backgroundColor: Colors.green, borderColor: Colors.green },
+  langText: { color: Colors.textMuted, fontSize: 14, fontFamily: 'Regular' },
+  langTextActive: { color: Colors.bg },
 });

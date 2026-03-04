@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors, Spacing, Radius } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const TILE_COLORS = [
   { color: Colors.green,  bg: '#1a3a2a' },
@@ -17,7 +17,8 @@ const TILE_COLORS = [
 
 export const HowToScreen: React.FC = () => {
   const router = useRouter();
-  const { nav, howTo } = Strings;
+  const { strings } = useLanguage();
+  const { nav, howTo } = strings;
 
   return (
     <SafeAreaView style={styles.safe}>

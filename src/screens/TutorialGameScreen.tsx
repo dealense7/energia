@@ -8,7 +8,8 @@ import { Colors, Spacing, Radius } from '../constants/theme';
 import { GameState, GameStatus, TileType, Puzzle, Tile, Position } from '../engine/types';
 import { createInitialGameState, movePlayerToCell, playerIsStuck } from '../engine/gameLogic';
 import { generateTutorialPuzzle } from '../engine/tutorialPuzzleGenerator';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
+
 
 import { Grid } from '../components/Grid';
 import { EnergyBar, EnergyFlash } from '../components/EnergyBar';
@@ -131,6 +132,7 @@ const useGameSession = (
 
 export const TutorialGameScreen: React.FC = () => {
   const router = useRouter();
+  const { strings } = useLanguage();
   const {
     isGenerating,
     generationFailed,
@@ -156,7 +158,7 @@ export const TutorialGameScreen: React.FC = () => {
     if (!puzzle || !game) return;
 
     const { pathSoFar, visitedCells } = game;
-    const { tooltips } = Strings.tutorial;
+    const { tooltips } = strings.tutorial;
     const { correctSolution } = puzzle;
 
     // Highlight the next cell in the solution
@@ -232,11 +234,11 @@ export const TutorialGameScreen: React.FC = () => {
           style={styles.backBtn}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Text style={styles.backText}>{Strings.nav.back}</Text>
+          <Text style={styles.backText}>{strings.nav.back}</Text>
         </TouchableOpacity>
 
         <View style={styles.titleCol}>
-          <Text style={styles.titleText}>{Strings.tutorial.title}</Text>
+          <Text style={styles.titleText}>{strings.tutorial.title}</Text>
         </View>
 
         <View style={styles.spacer} />
@@ -276,7 +278,7 @@ export const TutorialGameScreen: React.FC = () => {
 
         {playerIsStuck(game) && (
           <View style={styles.stuckBanner}>
-            <Text style={styles.stuckText}>{Strings.game.stuckBanner}</Text>
+            <Text style={styles.stuckText}>{strings.game.stuckBanner}</Text>
           </View>
         )}
 

@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors, Spacing, Radius } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const WinScreen: React.FC = () => {
   const router = useRouter();
@@ -13,7 +13,8 @@ export const WinScreen: React.FC = () => {
 
   const pulse = useRef(new Animated.Value(1)).current;
   const fade  = useRef(new Animated.Value(0)).current;
-  const { win } = Strings;
+  const { strings } = useLanguage();
+  const { win } = strings;
 
   const seconds = Number(time);
   const minutes = (seconds / 60).toFixed(1);

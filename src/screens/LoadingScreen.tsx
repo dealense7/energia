@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Animated, Image } from "react-native";
 import { Colors, Spacing } from "../constants/theme";
-import { Strings } from "../constants/strings";
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const LoadingScreen: React.FC<{
   difficulty: string;
@@ -19,13 +19,14 @@ export const LoadingScreen: React.FC<{
     ).start();
   }, []);
 
-  const randomFact = Strings.funFacts[Math.floor(Math.random() * Strings.funFacts.length)];
+  const { strings } = useLanguage();
+  const randomFact = strings.funFacts[Math.floor(Math.random() * strings.funFacts.length)];
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-          <Text style={styles.backText}>{Strings.nav.back}</Text>
+          <Text style={styles.backText}>{strings.nav.back}</Text>
         </TouchableOpacity>
         <View style={styles.titleCol}>
           <Text style={styles.diffTag}>{difficulty.toUpperCase()}</Text>
@@ -39,8 +40,8 @@ export const LoadingScreen: React.FC<{
           <Image source={require("../../assets/logo.png")} style={styles.logo}/>
         </Animated.View>
 
-        <Text style={styles.loadingTitle}>{Strings.generating}</Text>
-        <Text style={styles.loadingSubtitle}>{Strings.funFuctTitle}</Text>
+        <Text style={styles.loadingTitle}>{strings.generating}</Text>
+        <Text style={styles.loadingSubtitle}>{strings.funFactTitle}</Text>
         <Text style={[styles.loadingSubtitle, styles.funFact]}> {randomFact} </Text>
       </View>
     </SafeAreaView>

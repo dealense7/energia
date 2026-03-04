@@ -2,25 +2,28 @@ import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { View, Text, TouchableOpacity, StyleSheet, Platform, StatusBar, Animated, Image } from "react-native";
 import { Colors, Spacing, Radius } from "../constants/theme";
-import { Strings } from "../constants/strings";
+import { useLanguage } from '../contexts/LanguageContext';
 
-export const ErrorScreen: React.FC<{ onRetry: () => void; onBack: () => void }> = ({ onRetry, onBack }) => (
-  <SafeAreaView style={styles.safe}>
-    <View style={styles.loadingContainer}>
-      <Text style={styles.loadingTitle}>Happens rarely..</Text>
-      <Text style={styles.loadingSubtitle}>Try generating again, it might work this time.</Text>
-      <View style={{ flexDirection: 'row', gap: Spacing.lg, marginTop: Spacing.lg }}>
-        <TouchableOpacity style={styles.backBtnStyle}onPress={onBack}>
-          <Text style={styles.backText}>{Strings.nav.home}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-          <Text style={styles.retryText}>{Strings.nav.retry}</Text>
-        </TouchableOpacity>
+export const ErrorScreen: React.FC<{ onRetry: () => void; onBack: () => void }> = ({ onRetry, onBack }) => {
+  const { strings } = useLanguage();
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingTitle}>Happens rarely..</Text>
+        <Text style={styles.loadingSubtitle}>Try generating again, it might work this time.</Text>
+        <View style={{ flexDirection: 'row', gap: Spacing.lg, marginTop: Spacing.lg }}>
+          <TouchableOpacity style={styles.backBtnStyle}onPress={onBack}>
+            <Text style={styles.backText}>{strings.nav.home}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
+            <Text style={styles.retryText}>{strings.nav.retry}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  </SafeAreaView>
-);
-
+    </SafeAreaView>
+  );
+};
 
 const styles = StyleSheet.create({
   safe:             {flex: 1, backgroundColor: Colors.bg, paddingTop: Platform.OS === "android" ? (StatusBar.currentHeight ?? 0) : 0},
