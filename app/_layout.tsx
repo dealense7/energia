@@ -35,6 +35,7 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false, animation: 'fade', contentStyle: { backgroundColor: '#060d1a' } }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="game" />
+        <Stack.Screen name="tutorial" />
         <Stack.Screen name="win" />
         <Stack.Screen name="howto" />
       </Stack>

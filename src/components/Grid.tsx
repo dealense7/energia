@@ -1,16 +1,17 @@
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import { Cell } from './Cell';
-import { GameState } from '../engine/types';
+import { GameState, Position } from '../engine/types';
 
 interface GridProps {
   state: GameState;
   shakingCell: string | null;
   showHint: boolean;
   onCellPress: (row: number, col: number) => void;
+  nextCellToVisit?: Position | null;
 }
 
-export const Grid: React.FC<GridProps> = ({ state, shakingCell, showHint, onCellPress }) => {
+export const Grid: React.FC<GridProps> = ({ state, shakingCell, showHint, onCellPress, nextCellToVisit }) => {
   const { width }  = useWindowDimensions();
   const { puzzle, visitedCells, pathSoFar, playerPosition, lockedTilesAreUnlocked } = state;
   const { grid, gridSize, correctSolution } = puzzle;
@@ -42,6 +43,8 @@ export const Grid: React.FC<GridProps> = ({ state, shakingCell, showHint, onCell
             // stepNumber is the order this cell was visited (1-based), shown as breadcrumb
             const stepNumber = visited ? pathSoFar.findIndex(p => p[0] === r && p[1] === c) + 1 : null;
 
+            const isNextToVisit = nextCellToVisit && nextCellToVisit[0] === r && nextCellToVisit[1] === c;
+            const disabledInTutorial = !!(nextCellToVisit && !isNextToVisit && !isCurrent);
             return (
               <Cell
                 key={`${r}-${c}`}
@@ -56,6 +59,8 @@ export const Grid: React.FC<GridProps> = ({ state, shakingCell, showHint, onCell
                 onPress={onCellPress}
                 isShaking={shakingCell === `${r}-${c}`}
                 size={cellSize}
+                isNextToVisit={!!isNextToVisit}
+                disabledInTutorial={disabledInTutorial}
               />
             );
           })}

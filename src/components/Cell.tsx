@@ -15,6 +15,8 @@ interface CellProps {
   onPress: (row: number, col: number) => void;
   isShaking: boolean;
   size: number;
+  isNextToVisit?: boolean;
+  disabledInTutorial?: boolean;
 }
 
 export const Cell: React.FC<CellProps> = ({
@@ -22,9 +24,12 @@ export const Cell: React.FC<CellProps> = ({
   isVisited, isCurrent, isNextHint,
   tilesUnlocked, stepNumber,
   onPress, isShaking, size,
+  isNextToVisit,
+  disabledInTutorial,
 }) => {
   const shakeX   = useRef(new Animated.Value(0)).current;
   const dotOpacity = useRef(new Animated.Value(1)).current;
+  const nextCellGlow = useRef(new Animated.Value(1)).current;
 
   // Pulse the position dot while standing on this cell
   useEffect(() => {
@@ -40,6 +45,21 @@ export const Cell: React.FC<CellProps> = ({
       dotOpacity.setValue(1);
     }
   }, [isCurrent]);
+
+  // Glow animation for next cell to visit
+  useEffect(() => {
+    if (isNextToVisit && !isCurrent) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(nextCellGlow, { toValue: 0.1, duration: 800, useNativeDriver: true }),
+          Animated.timing(nextCellGlow, { toValue: 0.7,   duration: 800, useNativeDriver: true }),
+        ])
+      ).start();
+    } else {
+      nextCellGlow.stopAnimation();
+      nextCellGlow.setValue(1);
+    }
+  }, [isNextToVisit, isCurrent]);
 
   // Shake on invalid tap
   useEffect(() => {
@@ -62,16 +82,20 @@ export const Cell: React.FC<CellProps> = ({
 
   const backgroundColor = isVisited && !isCurrent ? '#0a1120' : bg;
 
-  const borderColor = isCurrent   ? accent
-                    : isNextHint  ? '#fbbf24'
-                    : isVisited   ? '#1e293b'
+  const borderColor = isCurrent      ? accent
+                    : isNextToVisit  ? '#22c55e'
+                    : isNextHint     ? '#fbbf24'
+                    : isVisited      ? '#1e293b'
                     : `${accent}33`;
+
+  const borderWidth = isCurrent || isNextToVisit ? 3 : 2;
 
   return (
     <Animated.View style={{ transform: [{ translateX: shakeX }] }}>
       <TouchableOpacity
         activeOpacity={0.75}
         onPress={() => onPress(row, col)}
+        disabled={disabledInTutorial}
         style={[
           styles.cell,
           {
@@ -79,8 +103,9 @@ export const Cell: React.FC<CellProps> = ({
             height: size,
             backgroundColor,
             borderColor,
-            opacity:   isVisited && !isCurrent ? 0.45 : 1,
-            elevation: isCurrent ? 8 : isNextHint ? 5 : 0,
+            borderWidth,
+            opacity:   disabledInTutorial ? 0.3 : isVisited && !isCurrent ? 0.45 : 1,
+            elevation: isCurrent ? 8 : isNextToVisit ? 6 : isNextHint ? 5 : 0,
           },
         ]}
       >
@@ -98,6 +123,11 @@ export const Cell: React.FC<CellProps> = ({
         <Text style={[styles.label, { color: isVisited && !isCurrent ? '#475569' : accent, fontSize: labelFontSize }]}>
           {label}
         </Text>
+
+        {/* Glow overlay for next cell to visit in tutorial */}
+        {isNextToVisit && !isCurrent && (
+          <Animated.View style={[styles.nextCellGlow, { opacity: nextCellGlow }]} pointerEvents="none" />
+        )}
 
         {/* Subtle glow overlay on the hint cell */}
         {isNextHint && !isVisited && (
@@ -139,5 +169,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     borderRadius:    4,
     backgroundColor: '#fbbf2418',
+  },
+  nextCellGlow: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 4,
+    backgroundColor: '#22c55e40',
+    borderWidth: 2,
+    borderColor: '#22c55e',
   },
 });

@@ -11,6 +11,7 @@
       "supportsTablet": true
     },
     "android": {
+      "versionCode": 1,
       "package": "com.rediron.energia",
       "adaptiveIcon": {
         "backgroundColor": "#060d1a",

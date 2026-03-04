@@ -19,6 +19,7 @@ export const Strings = {
     logoTitle:  'Energia',
     logoSub:    'Finish at zero. Navigate every cell.',
     howToPlay:  'How to Play',
+    tutorial:   'Tutorial',
     support:    'Source',
     supportSub: 'Github',
     difficulties: {
@@ -33,6 +34,23 @@ export const Strings = {
   game: {
     idlePrompt:  'Tap any cell to start',
     stuckBanner: '⛔ No valid moves — Undo or Reset',
+  },
+
+  // ─── Tutorial Mode ───────────────────────────────────────────────────────────
+  tutorial: {
+    title:       'Tutorial',
+    tooltips: {
+      startRule:     'Start on a positive tile to gain energy.',
+      secondRule:    'You can visit only neighbours.',
+      thirdRule:     'Any move costs 1 energy.',
+      fourthrule:    'Ping Indicates your location.',
+      multiplier:    '✕ Multiplier tiles multiply your current energy',
+      drain:         '⬇ Negative tiles drain energy. Be careful!',
+      locked:        '🔒 Locked tiles unlock after enough moves',
+      allTiles:      '✓ Visit every single tile to complete the puzzle',
+      finish:      'Finish on zero energy for a perfect score.',
+      completed:     '🎉 Great! You completed the tutorial!',
+    },
   },
 
   // ─── Energy Bar ──────────────────────────────────────────────────────────────
