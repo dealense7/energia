@@ -39,7 +39,23 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const strings = languageStrings[language];
+  const deepClone = <T,>(value: T): T => {
+    if (Array.isArray(value)) {
+      return value.map((item) => deepClone(item)) as unknown as T;
+    }
+    if (value && typeof value === 'object') {
+      const cloned = {} as any;
+      for (const key in value) {
+        if (Object.prototype.hasOwnProperty.call(value, key)) {
+          cloned[key] = deepClone((value as any)[key]);
+        }
+      }
+      return cloned;
+    }
+    return value;
+  };
+
+  const strings = React.useMemo(() => deepClone(languageStrings[language]), [language]);
 
   return (
     <LanguageContext.Provider value={{ language, strings, setLanguage }}>
